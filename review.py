@@ -3,6 +3,7 @@
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
+from tornado.options import parse_command_line
 
 
 class Application(tornado.web.Application):
@@ -23,6 +24,7 @@ class IndexHandler(tornado.web.RequestHandler):
         pass
 
 def main():
+    parse_command_line()
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(8003)
     tornado.ioloop.IOLoop.instance().start()
