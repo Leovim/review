@@ -17,7 +17,7 @@ from config import options
 class Application(tornado.web.Application):
     def __init__(self):
         routes = [
-            (r"/auth/oauth2callback", CallbackHandler),
+            (r"/add_event", EventHandler),
             (r"/auth/login", AuthHandler),
             (r"/logout", LogoutHandler),
             (r"/index", IndexHandler),
@@ -49,26 +49,27 @@ class IndexHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         user = self.get_current_user()
-        event = {
-            "summary": "测试",
-            "start": {
-                "dateTime": "2014-03-30T15:55:00.000+08:00",
-                "timeZone": "Asia/Shanghai",
-            },
-            "end": {
-                "dateTime": "2014-03-30T16:00:00.000+08:00",
-            },
-        }
-        data = json.dumps(event)
-        req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/changtong1993%40gmail.com/events", data=data, headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
-        try:
-            response = urllib2.urlopen(req).read()
-        except urllib2.HTTPError, e:
-            print e.code
-            print e.reason
-            response="%s:%s" % (e.code, e.reason)
+        # event = {
+        #     "summary": "测试",
+        #     "start": {
+        #         "dateTime": "2014-03-30T15:55:00.000+08:00",
+        #         "timeZone": "Asia/Shanghai",
+        #     },
+        #     "end": {
+        #         "dateTime": "2014-03-30T16:00:00.000+08:00",
+        #     },
+        # }
+        # calendar_id = "ksbdholahhb53br6gdrjk9v284%40group.calendar.google.com"
+        # data = json.dumps(event)
+        # req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/"+calendar_id+"/events", data=data, headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
+        # try:
+        #     response = urllib2.urlopen(req).read()
+        # except urllib2.HTTPError, e:
+        #     print e.code
+        #     print e.reason
+        #     response="%s:%s" % (e.code, e.reason)
 
-        self.render("index.html", content=user, response=response)
+        self.render("index.html", content=user, response='hehe')
 
 
 class AuthHandler(BaseHandler, tornado.auth.GoogleOAuth2Mixin):
@@ -94,9 +95,42 @@ class LogoutHandler(BaseHandler):
     def get(self):
         self.clear_cookie("user")
 
-class CallbackHandler(BaseHandler):
-    def get(self):
-        pass
+
+class EventHandler(BaseHandler):
+    @tornado.web.authenticated
+    @tornado.gen.coroutine
+    def post(self):
+        user = self.get_current_user()
+        startDate = self.get_argument("startDate", None)
+        startTime = self.get_argument("startTime", None)
+        endTime = self.get_argument("endTime", None)
+        summary = self.get_argument("summary", None)
+
+        event = dict()
+        event['summary'] = summary
+
+        # startDate = startDate.split('-')
+        # import datetime
+        # startDate = datetime.date(year=startDate[0], month=startDate[1], day=startDate[2])
+        event['start'] = dict(
+            dateTime=startDate+"T"+startTime+":00.000+08:00"
+        )
+        event['end'] = dict(
+            dateTime=startDate+"T"+endTime+":00.000+08:00"
+        )
+
+        calendar_id = "ksbdholahhb53br6gdrjk9v284%40group.calendar.google.com"
+        data = json.dumps(event)
+        req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/"+calendar_id+"/events", data=data, headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
+
+        try:
+            response = urllib2.urlopen(req).read()
+        except urllib2.HTTPError, e:
+            print e.code
+            print e.reason
+            response="%s:%s" % (e.code, e.reason)
+
+        self.render("index.html", content=user, response=response)
 
 
 def main():
