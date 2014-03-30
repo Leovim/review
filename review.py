@@ -9,6 +9,7 @@ import tornado.escape
 import os
 import json
 import urllib2
+import datetime
 
 from tornado.options import parse_command_line
 from config import options
@@ -101,36 +102,55 @@ class EventHandler(BaseHandler):
     @tornado.gen.coroutine
     def post(self):
         user = self.get_current_user()
-        startDate = self.get_argument("startDate", None)
+        nextDate = self.get_argument("startDate", None)
         startTime = self.get_argument("startTime", None)
         endTime = self.get_argument("endTime", None)
         summary = self.get_argument("summary", None)
 
-        event = dict()
-        event['summary'] = summary
+        events = []
+        # event = dict()
+        # event['summary'] = summary
+        #
+        # event['start'] = dict(
+        #     dateTime=nextDate.__str__()+"T"+startTime+":00.000+08:00"
+        # )
+        # event['end'] = dict(
+        #     dateTime=nextDate.__str__()+"T"+endTime+":00.000+08:00"
+        # )
 
-        # startDate = startDate.split('-')
-        # import datetime
-        # startDate = datetime.date(year=startDate[0], month=startDate[1], day=startDate[2])
-        event['start'] = dict(
-            dateTime=startDate+"T"+startTime+":00.000+08:00"
-        )
-        event['end'] = dict(
-            dateTime=startDate+"T"+endTime+":00.000+08:00"
-        )
-
+        nextDate = nextDate.split('-')
+        nextDate = datetime.date(year=int(nextDate[0]), month=int(nextDate[1]), day=int(nextDate[2]))
         calendar_id = "ksbdholahhb53br6gdrjk9v284%40group.calendar.google.com"
-        data = json.dumps(event)
-        req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/"+calendar_id+"/events", data=data, headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
+        next = [1, 2, 4, 8, 15]
+        i = 0
+        while i < 5:
+            event = dict()
+            event['summary'] = summary
+            nextDate = self.nextDate(nextDate, next[i])
+            event['start'] = dict(
+                dateTime=nextDate.__str__()+"T"+startTime+":00.000+08:00"
+            )
+            event['end'] = dict(
+                dateTime=nextDate.__str__()+"T"+endTime+":00.000+08:00"
+            )
+            events.append(event)
+            i += 1
 
-        try:
-            response = urllib2.urlopen(req).read()
-        except urllib2.HTTPError, e:
-            print e.code
-            print e.reason
-            response="%s:%s" % (e.code, e.reason)
+        responses = []
+        for event in events:
+            data = json.dumps(event)
+            req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/"+calendar_id+"/events", data=data, headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
+            try:
+                response = urllib2.urlopen(req).read()
+                responses.append(response)
+            except urllib2.URLError, e:
+                print e.reason
 
-        self.render("index.html", content=user, response=response)
+        self.render("index.html", content=user, response=responses)
+
+    def nextDate(self, originDate, interval):
+        term = datetime.timedelta(days=interval)
+        return originDate + term
 
 
 def main():

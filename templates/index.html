@@ -12,23 +12,25 @@
 </head>
 <body>
 <div class="container">
-  <h1 id="he">测试</h1>
-  <div id="hehe">
-    {% for item in content %}
-    <span>{{ item }} {{ content[item] }}</span>
-    {% end %}
-    <span>{{ response }}</span>
-  </div>
+    <h1 id="he">测试</h1>
+    <div id="hehe">
+        {% for item in content %}
+        <span>{{ item }} {{ content[item] }}</span>
+        <br/>
+        {% end %}
+        <br/>
+        <span>{{ response }}</span>
+    </div>
 
-  <div>
-      <form action="/add_event" method="post">
-          <input type="text" name="startDate" placeholder="date"/>
-          <input type="text" name="startTime" ceholder="start"/>
-          <input type="text" name="endTime" ceholder="end"/>
-          <input type="text" name="summary" ceholder="summary"/>
-          <input type="submit" value="提交"/>
-      </form>
-  </div>
+    <div>
+        <form action="/add_event" method="post">
+            <input type="text" name="startDate" placeholder="date"/>
+            <input type="text" name="startTime" placeholder="start"/>
+            <input type="text" name="endTime" placeholder="end"/>
+            <input type="text" name="summary" placeholder="summary"/>
+            <input type="submit" value="提交"/>
+        </form>
+    </div>
 </div> <!-- /container -->
 <script src="http://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
 <script src="http://cdn.bootcss.com/twitter-bootstrap/3.0.3/js/bootstrap.min.js"></script>
