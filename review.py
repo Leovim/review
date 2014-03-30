@@ -5,11 +5,26 @@ import tornado.ioloop
 import tornado.web
 import tornado.auth
 import tornado.gen
+import tornado.escape
 import os
-import base64
+import json
+
+# import argparse
+# import httplib2
+# from apiclient import discovery
+# from oauth2client import file
+# from oauth2client import client
+# from oauth2client import tools
 
 from tornado.options import parse_command_line
 from config import options
+
+# Parser for command-line arguments.
+# parser = argparse.ArgumentParser(
+#     description=__doc__,
+#     formatter_class=argparse.RawDescriptionHelpFormatter,
+#     parents=[tools.argparser])
+
 
 
 class Application(tornado.web.Application):
@@ -47,20 +62,46 @@ class IndexHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         user = self.get_current_user()
+        # http = httplib2.Http()
+        # http.authorizations = user['token_type'] + " " + user['access_token']
+        # http.forward_authorization_headers = user['token_type'] + " " + user['access_token']
+        # service = discovery.build('calendar', 'v3', http=http)
+
         import urllib
         import urllib2
-        data = {
-            "end": {
-                "dateTime": "2014-03-28T22:00:00.000+08:00",
-            },
+        event = {
+            "summary": "测试",
             "start": {
-                "dateTime": "2014-03-28T21:55:00.000+08:00"
+                "dateTime": "2014-03-30T15:55:00.000+08:00",
+                "timeZone": "Asia/Shanghai",
             },
-            "summary": "测试"
+            "end": {
+                "dateTime": "2014-03-30T16:00:00.000+08:00",
+            },
         }
-        req = urllib2.Request("https://www.googleapis.com/calendar/v3/users/me/calendars/changtong1993%40gmail.com/events", data, headers={"Authorization": user['token_type'] + " " + user['access_token']})
-        #req = urllib2.Request("https://www.googleapis.com/calendar/v3/users/me/calendarList", headers={"Authorization": user['token_type'] + " " + user['access_token']})
-        response = urllib2.urlopen(req).read()
+        data = json.dumps(event)
+        # data = event
+        # req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/changtong1993%40gmail.com/events",  headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
+        req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/changtong1993%40gmail.com/events", data=data, headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
+        print req.data
+        print req.headers
+        # todo 关于rest形式的请求
+        # todo request body 和 form data的区别
+        # todo 使用urllib2发送request body
+        # req = urllib2.Request("https://www.googleapis.com/calendar/v3/users/me/calendarList", headers={"Authorization": user['token_type'] + " " + user['access_token']})
+        try:
+            response = urllib2.urlopen(req).read()
+        except urllib2.HTTPError, e:
+            print e.code
+            print e.reason
+            response="%s:%s" % (e.code, e.reason)
+
+        # try:
+        #     response = "Success!"
+        # except client.AccessTokenRefreshError:
+        #     response = "Failed."
+        # response = service.events().insert(calendarId="changtong1993@gmail.com", body=event).execute()
+        # response = "test"
         self.render("index.html", content=user, response=response)
 
 
@@ -69,17 +110,16 @@ class AuthHandler(BaseHandler, tornado.auth.GoogleOAuth2Mixin):
     def get(self):
         if self.get_argument('code', False):
             user = yield self.get_authenticated_user(
-                redirect_uri='http://localhost:8002/auth/login', 
-                code=self.get_argument('code'))
+                redirect_uri=options.domain + 'auth/login', code=self.get_argument('code'))
             # Save the user with e.g. set_secure_cookie
             self.set_secure_cookie("user", tornado.escape.json_encode(user))
             self.redirect("/index")
         else:
             yield self.authorize_redirect(
-                redirect_uri='http://localhost:8002/auth/login',
+                redirect_uri=options.domain + 'auth/login',
                 client_id=self.settings['google_oauth']['key'],
                 client_secret=self.settings['google_oauth']['secret'],
-                scope=['profile', 'email', 'https://www.googleapis.com/auth/calendar'],
+                scope=['profile', 'email', 'https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.readonly'],
                 response_type='code',
                 extra_params={'approval_prompt': 'auto'})
 
