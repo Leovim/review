@@ -8,23 +8,10 @@ import tornado.gen
 import tornado.escape
 import os
 import json
-
-# import argparse
-# import httplib2
-# from apiclient import discovery
-# from oauth2client import file
-# from oauth2client import client
-# from oauth2client import tools
+import urllib2
 
 from tornado.options import parse_command_line
 from config import options
-
-# Parser for command-line arguments.
-# parser = argparse.ArgumentParser(
-#     description=__doc__,
-#     formatter_class=argparse.RawDescriptionHelpFormatter,
-#     parents=[tools.argparser])
-
 
 
 class Application(tornado.web.Application):
@@ -62,13 +49,6 @@ class IndexHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         user = self.get_current_user()
-        # http = httplib2.Http()
-        # http.authorizations = user['token_type'] + " " + user['access_token']
-        # http.forward_authorization_headers = user['token_type'] + " " + user['access_token']
-        # service = discovery.build('calendar', 'v3', http=http)
-
-        import urllib
-        import urllib2
         event = {
             "summary": "测试",
             "start": {
@@ -80,15 +60,7 @@ class IndexHandler(BaseHandler):
             },
         }
         data = json.dumps(event)
-        # data = event
-        # req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/changtong1993%40gmail.com/events",  headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
         req = urllib2.Request(url="https://www.googleapis.com/calendar/v3/calendars/changtong1993%40gmail.com/events", data=data, headers={"Authorization": user['token_type'] + " " + user['access_token'], "content-type": "application/json"})
-        print req.data
-        print req.headers
-        # todo 关于rest形式的请求
-        # todo request body 和 form data的区别
-        # todo 使用urllib2发送request body
-        # req = urllib2.Request("https://www.googleapis.com/calendar/v3/users/me/calendarList", headers={"Authorization": user['token_type'] + " " + user['access_token']})
         try:
             response = urllib2.urlopen(req).read()
         except urllib2.HTTPError, e:
@@ -96,12 +68,6 @@ class IndexHandler(BaseHandler):
             print e.reason
             response="%s:%s" % (e.code, e.reason)
 
-        # try:
-        #     response = "Success!"
-        # except client.AccessTokenRefreshError:
-        #     response = "Failed."
-        # response = service.events().insert(calendarId="changtong1993@gmail.com", body=event).execute()
-        # response = "test"
         self.render("index.html", content=user, response=response)
 
 
