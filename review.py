@@ -156,7 +156,7 @@ class EventHandler(BaseHandler):
 def main():
     parse_command_line()
     http_server = tornado.httpserver.HTTPServer(Application())
-    http_server.listen(8002)
+    http_server.listen(8004)
     tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":
